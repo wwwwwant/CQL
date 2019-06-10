@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "defaultSchema": "SALES",
+  "schemas": [
+    {
+      "name": "SALES",
+      "tables": [
+        {
+          "name": "Orders",
+          "type": "custom",
+          "factory": "com.want.calcite.plan.StreamTableFactory",
+          "stream":{"stream":true}
+        }, {
+          "name": "User",
+          "type": "custom",
+          "factory": "com.want.calcite.plan.UserTableFactory",
+          "stream":{"stream":false}
+        }
+      ]
+    }
+  ]
+}
