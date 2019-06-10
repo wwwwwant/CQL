@@ -4,6 +4,7 @@
 .DS_Store?
 Desktop.ini
 .idea/*
+*.iml
 # swp and Icon files
 *.swp
 Icon?
