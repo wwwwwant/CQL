@@ -8,12 +8,12 @@
         {
           "name": "Orders",
           "type": "custom",
-          "factory": "com.want.calcite.plan.StreamTableFactory",
+          "factory": "soton.want.calcite.plan.StreamTableFactory",
           "stream":{"stream":true}
         }, {
           "name": "User",
           "type": "custom",
-          "factory": "com.want.calcite.plan.UserTableFactory",
+          "factory": "soton.want.calcite.plan.UserTableFactory",
           "stream":{"stream":false}
         }
       ]

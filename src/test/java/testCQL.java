@@ -22,17 +22,21 @@ import static soton.want.calcite.operators.Utils.getRelBuilder;
  */
 public class testCQL {
 
+    /**
+     * RelBuilder is used to build logical plan with api and schema
+     * no need to parse SQL
+     */
     private static RelBuilder builder = getRelBuilder("sales.json");
 
 
     public static void main(String[] args) {
 
-//        RelToOperators visitor = streamRelationJoin();
-//
-//
-//        List<Operator> tables = visitor.getTables();
-//
-//        testOperator(tables);
+
+        // test join on stream and relation
+        streamRelationJoin();
+
+        // test project and filter on stream
+//        streamProjectFilter();
 
 
 
@@ -56,7 +60,12 @@ public class testCQL {
     }
 
 
-    public static RelToOperators streamRelationJoin(){
+    public static void streamRelationJoin(){
+        /**
+         * SELECT STREAM ID, USERID, USERID0, NAME
+         * FROM Orders[ROW 30] as o join User as u
+         * ON o.USERID=U.USERID
+         */
         RelNode t1 = builder.scan("Orders").build();
         LogicalTupleWindow window1 = LogicalTupleWindow.create(t1, builder.literal(30));
 
@@ -86,12 +95,18 @@ public class testCQL {
 
         visitor.visit(rStream);
 
-        return visitor;
+        List<Operator> tables = visitor.getTables();
 
+        testOperator(tables);
     }
 
-    public static RelToOperators streamProjectFilter(){
+    public static void streamProjectFilter(){
 
+        /**
+         * SELECT stream ID, PRODUCT
+         * FROM Orders[ROW 50]
+         * WHERE ID>3;
+         */
         RelNode relScan = builder.scan("Orders").build();
         LogicalTupleWindow relWindow = LogicalTupleWindow.create(relScan, builder.literal(50));
         RelNode relProject = builder
@@ -104,16 +119,21 @@ public class testCQL {
         RelToOperators visitor = new RelToOperators();
         visitor.visit(rStream);
 
-        return visitor;
+        List<Operator> tables = visitor.getTables();
+
+        testOperator(tables);
+
     }
 
 
     public static void testOperator(List<Operator> tables){
         while (true){
             System.out.println(new Date(System.currentTimeMillis()));
+            System.out.println();
             for (Operator table : tables){
                 table.run();
             }
+            System.out.println("------------------------------------");
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -124,33 +144,5 @@ public class testCQL {
     }
 
 
-    public static void printTypes(Tuple tuple){
-        StringBuilder sb = new StringBuilder();
-        List<RelDataTypeField> fieldList = tuple.getRowType().getFieldList();
-        for (RelDataTypeField field : fieldList){
-            sb.append(field.getName()).append(",");
-        }
-        sb.deleteCharAt(sb.length()-1);
-        System.out.println(sb.toString());
 
-
-        sb = new StringBuilder();
-        for (RelDataTypeField field : fieldList){
-            sb.append(field.getType()).append(",");
-        }
-        sb.deleteCharAt(sb.length()-1);
-        System.out.println(sb.toString());
-    }
-
-
-    public static void printTuple(Tuple tuple){
-        StringBuilder sb = new StringBuilder();
-        Object[] row = tuple.getValues();
-
-        for (Object obj : row){
-            sb.append(obj).append(",");
-        }
-        sb.append(tuple.getState());
-        System.out.println(sb.toString());
-    }
 }

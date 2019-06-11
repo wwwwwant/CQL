@@ -7,10 +7,10 @@ import org.apache.calcite.rel.type.RelDataType;
  */
 public class Tuple {
 
-    public static Tuple copy(Tuple tuple) {
-        return new Tuple(tuple.getValues(),tuple.getRowType(),tuple.getState());
-    }
 
+    /**
+     * represent the state of the tuple either added or deleted
+     */
     public static enum State{
         ADD{
             @Override
@@ -33,6 +33,12 @@ public class Tuple {
     public Tuple(Object[] values, RelDataType rowType) {
         this(values,rowType, State.ADD);
     }
+
+
+    public static Tuple copy(Tuple tuple) {
+        return new Tuple(tuple.getValues(),tuple.getRowType(),tuple.getState());
+    }
+
 
     public Tuple(Object[] values,RelDataType rowType,State state){
         this.values = values;

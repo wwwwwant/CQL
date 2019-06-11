@@ -13,10 +13,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * This class visits Logical plan and generate physical operators
  * @author want
  */
 public class RelToOperators {
 
+    /**
+     * leaf nodes of the physical plan
+     * the start point of the physical operators
+     */
     private List<Operator> tables = new ArrayList<>();
 
 

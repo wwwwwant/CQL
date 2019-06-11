@@ -8,6 +8,7 @@ import org.apache.calcite.rel.stream.Delta;
 import org.apache.calcite.rex.RexNode;
 
 /**
+ * LogicalNode which transform a Relation to a Stream
  * @author want
  */
 public class LogicalDelta extends Delta {
@@ -33,6 +34,6 @@ public class LogicalDelta extends Delta {
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw).item("RStream",null);
+        return super.explainTerms(pw).item("Delta",condition);
     }
 }

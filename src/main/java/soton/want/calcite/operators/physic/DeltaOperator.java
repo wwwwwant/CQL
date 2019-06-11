@@ -7,6 +7,9 @@ import soton.want.calcite.operators.Utils;
 import soton.want.calcite.operators.logic.LogicalDelta;
 
 /**
+ * represent 3 kinds of stream
+ * RStream, DStream, IStream
+ * based on the condition
  * @author want
  */
 public class DeltaOperator extends UnaryOperator<LogicalDelta> {
@@ -27,7 +30,7 @@ public class DeltaOperator extends UnaryOperator<LogicalDelta> {
         if (tuple == null){
             return;
         }
-        Utils.printTypes(tuple);
+//        Utils.printTypes(tuple);
 
         while (tuple!=null){
             if (type.equals(tuple.getState().toString()) || type.equals("RET")){

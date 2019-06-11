@@ -37,6 +37,7 @@ public abstract class AbstractOperator<T extends RelNode> implements Operator{
         this.parent = parent;
     }
 
+    @Override
     public void runParent(){
         if (parent!=null && !this.sink.isEmpty()){
             this.parent.run();

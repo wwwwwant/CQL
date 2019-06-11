@@ -53,6 +53,36 @@ public class Utils {
         return null;
     }
 
+    public static void printTypes(Tuple tuple){
+        StringBuilder sb = new StringBuilder();
+        List<RelDataTypeField> fieldList = tuple.getRowType().getFieldList();
+        for (RelDataTypeField field : fieldList){
+            sb.append(field.getName()).append(",");
+        }
+        sb.deleteCharAt(sb.length()-1);
+        System.out.println(sb.toString());
+
+
+        sb = new StringBuilder();
+        for (RelDataTypeField field : fieldList){
+            sb.append(field.getType()).append(",");
+        }
+        sb.deleteCharAt(sb.length()-1);
+        System.out.println(sb.toString());
+    }
+
+
+    public static void printTuple(Tuple tuple){
+        StringBuilder sb = new StringBuilder();
+        Object[] row = tuple.getValues();
+
+        for (Object obj : row){
+            sb.append(obj).append(",");
+        }
+        sb.append(tuple.getState());
+        System.out.println(sb.toString());
+    }
+
 
 
 }

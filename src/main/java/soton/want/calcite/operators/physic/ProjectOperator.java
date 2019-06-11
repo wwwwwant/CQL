@@ -26,6 +26,7 @@ public class ProjectOperator extends UnaryOperator<Project> {
         while ((tuple=source.pollFirst())!=null){
             Object[] result = new Object[projectList.size()];
 
+            // get project fields
             for (int i=0;i<projectList.size();i++){
                 result[i] = Eval.eval(projectList.get(i),tuple);
             }

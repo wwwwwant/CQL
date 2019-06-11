@@ -13,12 +13,18 @@ import java.util.List;
 
 
 /**
+ * This class evaluates expressions
+ * <li>get a field from a tuple {@link RexInputRef}</li>
+ * <li>get a literal value from {@link RexLiteral}</li>
+ * <li>evaluate join condition, filter condition in {@link RexCall}</li>
+ *
  * @author want
  */
 public class Eval {
 
     static Object eval(RexNode rex, Tuple tuple){
 
+        // RexInputRef represent a field in a tuple
         if (rex instanceof RexInputRef){
             int index = ((RexInputRef) rex).getIndex();
             return (Comparable)tuple.getField(index);
@@ -34,6 +40,7 @@ public class Eval {
             return literal.getValue();
 
         }else if (rex instanceof RexCall){
+            // used in filter condition, join condition,
             RexCall call = (RexCall) rex;
             SqlKind kind = call.getKind();
             List<RexNode> operands = call.getOperands();

@@ -9,6 +9,8 @@ import soton.want.calcite.operators.TupleQueue;
 import java.util.Iterator;
 
 /**
+ * just as described in standford Stream
+ * maintain two synopsis, run join when tuple is added or deleted from the synopsis
  * @author want
  */
 public class JoinOperator extends BiOperator<Join> {
@@ -37,6 +39,10 @@ public class JoinOperator extends BiOperator<Join> {
         runParent();
     }
 
+    /**
+     * consume tuple in source, run join, and add the join result to the sink.
+     * @param source sink of a child
+     */
     private void runSource(TupleQueue source){
         TupleQueue joinSynopsis = rightSynopsis, synopsis = leftSynopsis;
         boolean isLeft = true;

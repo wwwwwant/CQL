@@ -8,6 +8,8 @@ import soton.want.calcite.operators.logic.LogicalTupleWindow;
 import java.math.BigDecimal;
 
 /**
+ * Physical Operator {@link LogicalTupleWindow}
+ * use synopsis to maintain state
  * @author want
  */
 public class WindowOperator extends UnaryOperator<LogicalTupleWindow> {

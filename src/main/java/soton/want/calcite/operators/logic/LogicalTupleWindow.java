@@ -9,6 +9,7 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 
 /**
+ * LogicalWindow which transform a Stream to a Relation with fixed windowSize
  * @author want
  */
 public class LogicalTupleWindow extends SingleRel {

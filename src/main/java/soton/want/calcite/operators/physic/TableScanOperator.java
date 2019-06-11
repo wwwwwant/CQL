@@ -14,6 +14,12 @@ import java.util.LinkedList;
  */
 public class TableScanOperator extends AbstractOperator<TableScan> {
 
+    /**
+     * table source which produce tuple
+     * {@link soton.want.calcite.plan.StreamTableFactory}
+     * {@link soton.want.calcite.plan.UserTableFactory}
+     *
+     */
     RelOptTable table;
 
     Enumerator<Object[]> enumerator = null;
@@ -32,6 +38,9 @@ public class TableScanOperator extends AbstractOperator<TableScan> {
 
     }
 
+    /**
+     * daemon thread keeps taking tuple from the table source
+     */
     private class Producer implements Runnable{
 
         @Override
