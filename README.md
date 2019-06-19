@@ -8,7 +8,7 @@ The overview of the process:
 1. define schema information in resources/sales.json
 2. read source data from tableFactory (StreamTableFactory and UserFactory)
 3. each operator calls run method consume tuple from the source and output tuple in sink
-4. each sink of a child operator is the source of the parent operator
-5. then it calls runParent to run parent operator
+4. the sink of a child operator is the source of it's parent operator
+5. then child operator calls runParent to run parent operator
 
-Current the whole process runs in a single thread.
+Currently the whole process runs in a single thread.

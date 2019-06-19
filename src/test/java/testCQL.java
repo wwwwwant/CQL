@@ -1,17 +1,21 @@
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
-import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RelBuilder;
+import org.apache.calcite.util.TimeString;
+import org.apache.log4j.Logger;
 import soton.want.calcite.operators.RelToOperators;
-import soton.want.calcite.operators.Tuple;
+import soton.want.calcite.operators.Utils;
 import soton.want.calcite.operators.logic.LogicalDelta;
 import soton.want.calcite.operators.logic.LogicalTupleWindow;
 import soton.want.calcite.operators.physic.Operator;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -21,7 +25,6 @@ import static soton.want.calcite.operators.Utils.getRelBuilder;
  * @author want
  */
 public class testCQL {
-
     /**
      * RelBuilder is used to build logical plan with api and schema
      * no need to parse SQL
@@ -33,13 +36,89 @@ public class testCQL {
 
 
         // test join on stream and relation
-        streamRelationJoin();
+//        streamRelationJoin();
 
         // test project and filter on stream
 //        streamProjectFilter();
 
+        // test timeWin
+//        timeWinProject();
+        // test timeWinJoin
+        timeWinJoin();
+
+//        RexNode timeInterval = Utils.createTimeInterval(builder, 1, 0, 0);
+//        System.out.println(timeInterval.toString());
+//        System.out.println(timeInterval.getType().getSqlTypeName().equals(SqlTypeName.TIME));
+//        System.out.println("mills: "+((RexLiteral) timeInterval).getValue2());
 
 
+    }
+
+
+    private static void timeWinJoin(){
+        /**
+         * SELECT STREAM ID, USERID, USERID0, NAME
+         * FROM Orders[Range 00:00:30] as o join User as u
+         * ON o.USERID=U.USERID
+         */
+        RelNode t1 = builder.scan("Orders").build();
+        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 30);
+        LogicalTupleWindow window1 = LogicalTupleWindow.create(t1, timeInterval);
+
+        RelNode t2 = builder.scan("User").build();
+
+        builder.push(window1);
+        builder.push(t2);
+
+        builder.join(JoinRelType.INNER,"USERID");
+
+        List<RexNode> fields = new ArrayList<>();
+        int[] fieldId = new int[]{1,2,5,6};
+
+        for (int id: fieldId){
+            fields.add(builder.field(id));
+        }
+
+        builder.project(fields);
+
+        RelNode project = builder.build();
+
+        LogicalDelta rStream = LogicalDelta.create(project,builder.literal("RET"));
+
+//        System.out.println(RelOptUtil.toString(rStream));
+
+        RelToOperators visitor = new RelToOperators();
+
+        visitor.visit(rStream);
+
+        List<Operator> tables = visitor.getTables();
+
+        testOperator(tables);
+    }
+
+    private static void timeWinProject(){
+        /**
+         * SELECT stream ID, PRODUCT
+         * FROM Orders[Range 00:00:30]
+         * WHERE ID>3;
+         */
+        RelNode relScan = builder.scan("Orders").build();
+        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 30);
+
+        LogicalTupleWindow relWindow = LogicalTupleWindow.create(relScan, timeInterval);
+        RelNode relProject = builder
+                .push(relWindow)
+                .filter(builder.call(SqlStdOperatorTable.GREATER_THAN,builder.field("ID"),builder.literal(3)))
+                .project(builder.field("ID"),builder.field("PRODUCT")).build();
+
+        LogicalDelta rStream = LogicalDelta.create(relProject,builder.literal("RET"));
+
+        RelToOperators visitor = new RelToOperators();
+        visitor.visit(rStream);
+
+        List<Operator> tables = visitor.getTables();
+
+        testOperator(tables);
     }
 
 
