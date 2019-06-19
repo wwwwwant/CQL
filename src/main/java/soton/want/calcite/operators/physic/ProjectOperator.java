@@ -2,6 +2,7 @@ package soton.want.calcite.operators.physic;
 
 import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rex.RexNode;
+import org.apache.log4j.Logger;
 import soton.want.calcite.operators.Tuple;
 
 import java.util.List;
@@ -11,6 +12,8 @@ import java.util.List;
  */
 public class ProjectOperator extends UnaryOperator<Project> {
 
+    private static final Logger LOGGER = Logger.getLogger(ProjectOperator.class);
+
     List<RexNode> projectList;
 
     public ProjectOperator(Project project, Operator child) {
@@ -19,7 +22,9 @@ public class ProjectOperator extends UnaryOperator<Project> {
     }
 
     @Override
-    public void run() {
+    public void doRun() {
+
+        LOGGER.debug("run project......");
 
         Tuple tuple;
         Tuple res = null;
@@ -30,11 +35,9 @@ public class ProjectOperator extends UnaryOperator<Project> {
             for (int i=0;i<projectList.size();i++){
                 result[i] = Eval.eval(projectList.get(i),tuple);
             }
-            res = new Tuple(result,getRowType(),tuple.getState());
+            res = new Tuple(result,getRowType(),tuple.getState(),tuple.getTs());
             sink.addLast(res);
         }
-
-        runParent();
 
     }
 }

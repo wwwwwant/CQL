@@ -9,12 +9,12 @@ import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 
 /**
- * LogicalWindow which transform a Stream to a Relation with fixed windowSize
+ * LogicalWindow which transform a Stream to a Relation based on condition (fixed tuple size or time interval)
  * @author want
  */
 public class LogicalTupleWindow extends SingleRel {
 
-    private RexNode windowSize;
+    private RexNode condition;
 
     /**
      * Creates a <code>SingleRel</code>.
@@ -23,9 +23,9 @@ public class LogicalTupleWindow extends SingleRel {
      * @param traits
      * @param input   Input relational expression
      */
-    protected LogicalTupleWindow(RelOptCluster cluster, RelTraitSet traits, RelNode input, RexNode windowSize) {
+    protected LogicalTupleWindow(RelOptCluster cluster, RelTraitSet traits, RelNode input, RexNode condition) {
         super(cluster, traits, input);
-        this.windowSize = windowSize;
+        this.condition = condition;
     }
 
     public static LogicalTupleWindow create(RelNode input, RexNode windowSize){
@@ -34,13 +34,13 @@ public class LogicalTupleWindow extends SingleRel {
         return new LogicalTupleWindow(cluster,traits,input,windowSize);
     }
 
-    public RexNode getWindowSize() {
-        return windowSize;
+    public RexNode getCondition() {
+        return condition;
     }
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-                .item("window",((RexLiteral)windowSize).getValue());
+                .item("window",((RexLiteral) condition).getValue());
     }
 }

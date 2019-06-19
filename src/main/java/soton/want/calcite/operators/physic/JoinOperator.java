@@ -3,6 +3,7 @@ package soton.want.calcite.operators.physic;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
+import org.apache.log4j.Logger;
 import soton.want.calcite.operators.Tuple;
 import soton.want.calcite.operators.TupleQueue;
 
@@ -14,6 +15,8 @@ import java.util.Iterator;
  * @author want
  */
 public class JoinOperator extends BiOperator<Join> {
+
+    private static final Logger LOGGER = Logger.getLogger(JoinOperator.class);
 
     private Join relJoin;
 
@@ -33,10 +36,10 @@ public class JoinOperator extends BiOperator<Join> {
     }
 
     @Override
-    public void run() {
+    public void doRun() {
+        LOGGER.debug("run join......");
         runSource(leftSource);
         runSource(rightSource);
-        runParent();
     }
 
     /**
@@ -92,7 +95,7 @@ public class JoinOperator extends BiOperator<Join> {
 
                 System.arraycopy(v2,0,val,leftCount,rightCount);
 
-                res = new Tuple(val,relJoin.getRowType(),state);
+                res = new Tuple(val,relJoin.getRowType(),state,tuple.getTs());
                 Boolean isJoin = (Boolean) Eval.eval(condition,res);
                 if (isJoin != null && isJoin){
                     this.sink.addLast(res);
@@ -112,7 +115,7 @@ public class JoinOperator extends BiOperator<Join> {
 
                 System.arraycopy(v1,0,val,0,leftCount);
 
-                res = new Tuple(val,relJoin.getRowType(),state);
+                res = new Tuple(val,relJoin.getRowType(),state,tuple.getTs());
                 Boolean isJoin = (Boolean) Eval.eval(condition,res);
                 if (isJoin != null && isJoin){
                     this.sink.addLast(res);

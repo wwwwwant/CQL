@@ -22,6 +22,10 @@ import java.util.List;
  */
 public class Eval {
 
+    static Object eval(RexNode rex){
+        return eval(rex,null);
+    }
+
     static Object eval(RexNode rex, Tuple tuple){
 
         // RexInputRef represent a field in a tuple
@@ -37,7 +41,7 @@ public class Eval {
 //                case CHAR: return literal.getValue();
 //                default: return null;
 //            }
-            return literal.getValue();
+            return literal.getValue2();
 
         }else if (rex instanceof RexCall){
             // used in filter condition, join condition,
@@ -57,14 +61,14 @@ public class Eval {
                 o1 = (Comparable) eval(rex0,tuple);
             }
 
-            if (o0 instanceof BigDecimal) {
+            if (o0 instanceof Number) {
                 if (o1 instanceof Double || o1 instanceof Float) {
                     o1 = new BigDecimal(((Number) o1).doubleValue());
                 } else {
                     o1 = new BigDecimal(((Number) o1).longValue());
                 }
             }
-            if (o1 instanceof BigDecimal) {
+            if (o1 instanceof Number) {
                 if (o0 instanceof Double || o0 instanceof Float) {
                     o0 = new BigDecimal(((Number) o0).doubleValue());
                 } else {

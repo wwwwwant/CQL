@@ -29,6 +29,7 @@ public class Tuple {
     private Object[] values;
     private RelDataType rowType;
     private State state;
+    private long ts;
 
     public Tuple(Object[] values, RelDataType rowType) {
         this(values,rowType, State.ADD);
@@ -36,27 +37,23 @@ public class Tuple {
 
 
     public static Tuple copy(Tuple tuple) {
-        return new Tuple(tuple.getValues(),tuple.getRowType(),tuple.getState());
+        return new Tuple(tuple.getValues(),tuple.getRowType(),tuple.getState(),tuple.getTs());
     }
 
 
-    public Tuple(Object[] values,RelDataType rowType,State state){
+    public Tuple(Object[] values,RelDataType rowType,State state, long ts){
         this.values = values;
         this.rowType = rowType;
         this.state = state;
+        this.ts = ts;
+    }
+    public Tuple(Object[] values,RelDataType rowType,State state){
+        this(values,rowType,state,System.currentTimeMillis());
     }
 
-    public static Tuple join(Tuple t1, Tuple t2){
-        Object[] v1 = t1.getValues();
-        Object[] v2 = t2.getValues();
-        Object[] value = new Object[v1.length+v2.length];
-
-        return null;
-
-    }
 
     public Tuple(Tuple tuple, State state){
-        this(tuple.getValues(),tuple.getRowType(),state);
+        this(tuple.getValues(),tuple.getRowType(),state,tuple.getTs());
     }
 
     public int getFieldCount(){ return values.length;}
@@ -81,6 +78,13 @@ public class Tuple {
         this.state = state;
     }
 
+    public long getTs() {
+        return ts;
+    }
+
+    public void setTs(long ts) {
+        this.ts = ts;
+    }
 
     @Override
     public boolean equals(Object obj) {

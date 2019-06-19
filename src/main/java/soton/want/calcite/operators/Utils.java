@@ -8,16 +8,24 @@ import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RelBuilder;
+import org.apache.calcite.util.TimeString;
 import soton.want.calcite.operators.logic.LogicalDelta;
 import soton.want.calcite.operators.logic.LogicalTupleWindow;
 import soton.want.calcite.operators.physic.Operator;
 import soton.want.calcite.plan.SimpleQueryPlanner;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -40,6 +48,12 @@ public class Utils {
 //
 //        return relOptTable;
 //    }
+
+    static final DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+    public static String formatDate(long ts){
+        return format.format(new Date(ts));
+    }
 
 
     public static RelBuilder getRelBuilder(String model) {
@@ -80,7 +94,21 @@ public class Utils {
             sb.append(obj).append(",");
         }
         sb.append(tuple.getState());
+        sb.append(",");
+
+        sb.append(formatDate(tuple.getTs()));
+
         System.out.println(sb.toString());
+    }
+
+    public static RexNode createTimeInterval(RelBuilder builder,int h, int m, int s){
+        RelDataTypeFactory typeFactory = builder.getTypeFactory();
+        RexBuilder rexBuilder = builder.getRexBuilder();
+        RelDataType timeType = typeFactory.createSqlType(SqlTypeName.TIME);
+
+        final TimeString t = new TimeString(h, m, s);
+        return rexBuilder.makeLiteral(t,timeType,false);
+
     }
 
 

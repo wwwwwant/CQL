@@ -1,7 +1,7 @@
 package soton.want.calcite.operators.physic;
 
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.util.NlsString;
+import org.apache.log4j.Logger;
 import soton.want.calcite.operators.Tuple;
 import soton.want.calcite.operators.Utils;
 import soton.want.calcite.operators.logic.LogicalDelta;
@@ -14,17 +14,20 @@ import soton.want.calcite.operators.logic.LogicalDelta;
  */
 public class DeltaOperator extends UnaryOperator<LogicalDelta> {
 
+    private static final Logger LOGGER = Logger.getLogger(DeltaOperator.class);
+
     private RexNode condition;
     private String type;
 
     public DeltaOperator(LogicalDelta logicalNode, Operator child) {
         super(logicalNode, child);
         this.condition = logicalNode.getCondition();
-        this.type = ((NlsString)Eval.eval(condition,null)).getValue();
+        this.type = (String)Eval.eval(condition,null);
     }
 
     @Override
-    public void run() {
+    protected void doRun() {
+        LOGGER.debug("run delta......");
 
         Tuple tuple = source.pollFirst();
         if (tuple == null){
@@ -38,7 +41,10 @@ public class DeltaOperator extends UnaryOperator<LogicalDelta> {
             }
             tuple = source.pollFirst();
         }
+    }
 
-
+    @Override
+    public void run() {
+        doRun();
     }
 }

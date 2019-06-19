@@ -37,6 +37,14 @@ public abstract class AbstractOperator<T extends RelNode> implements Operator{
         this.parent = parent;
     }
 
+    protected abstract void doRun();
+
+    @Override
+    public void run() {
+        doRun();
+        runParent();
+    }
+
     @Override
     public void runParent(){
         if (parent!=null && !this.sink.isEmpty()){

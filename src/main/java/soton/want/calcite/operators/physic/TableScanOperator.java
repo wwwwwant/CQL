@@ -5,6 +5,7 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.Table;
+import org.apache.log4j.Logger;
 import soton.want.calcite.operators.Tuple;
 
 import java.util.LinkedList;
@@ -13,6 +14,8 @@ import java.util.LinkedList;
  * @author want
  */
 public class TableScanOperator extends AbstractOperator<TableScan> {
+
+    private static final Logger LOGGER = Logger.getLogger(TableScanOperator.class);
 
     /**
      * table source which produce tuple
@@ -73,15 +76,14 @@ public class TableScanOperator extends AbstractOperator<TableScan> {
 
 
     @Override
-    public void run() {
-
+    public void doRun() {
+        LOGGER.debug("run tableScan......");
         synchronized (source){
             while (!source.isEmpty()){
                 this.sink.addLast(Tuple.copy(source.pollFirst()));
             }
         }
 
-        runParent();
     }
 
 
