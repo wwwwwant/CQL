@@ -2,6 +2,7 @@ package soton.want.calcite.operators;
 
 
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.*;
@@ -60,6 +61,11 @@ public class RelToOperators {
         return new JoinOperator(join,left,right);
     }
 
+    public Operator visit(LogicalAggregate aggregate) {
+        Operator childOp = visit(aggregate.getInput());
+        return new GroupByOperator(aggregate,childOp);
+    }
+
 
     public Operator visit(LogicalUnion union) {
         return null;
@@ -84,8 +90,10 @@ public class RelToOperators {
             return visit((LogicalTupleWindow) other);
         }else if (other instanceof TableScan){
             return visit((TableScan) other);
-        }else if (other instanceof Join){
+        }else if (other instanceof LogicalJoin){
             return visit((LogicalJoin) other);
+        }else if (other instanceof LogicalAggregate){
+            return visit((LogicalAggregate) other);
         }
         return null;
     }

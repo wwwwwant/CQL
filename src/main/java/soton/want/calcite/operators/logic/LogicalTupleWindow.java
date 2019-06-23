@@ -7,6 +7,7 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 /**
  * LogicalWindow which transform a Stream to a Relation based on condition (fixed tuple size or time interval)
@@ -40,7 +41,13 @@ public class LogicalTupleWindow extends SingleRel {
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw)
-                .item("window",((RexLiteral) condition).getValue());
+        if (condition.getType().getSqlTypeName().equals(SqlTypeName.TIME)){
+            return super.explainTerms(pw)
+                    .item("TupleTimeWindow",((RexLiteral) condition).getValue2());
+        }else {
+            return super.explainTerms(pw)
+                    .item("TupleSizeWindow",((RexLiteral) condition).getValue2());
+        }
+
     }
 }

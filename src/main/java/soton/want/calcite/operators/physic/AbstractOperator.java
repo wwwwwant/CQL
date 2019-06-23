@@ -2,6 +2,7 @@ package soton.want.calcite.operators.physic;
 
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
+import soton.want.calcite.operators.Context;
 import soton.want.calcite.operators.TupleQueue;
 
 /**
@@ -11,6 +12,7 @@ public abstract class AbstractOperator<T extends RelNode> implements Operator{
     T logicalNode;
     protected TupleQueue sink;
     protected Operator parent;
+    protected Context context = Context.getInstance();
 
     public AbstractOperator(T logicalNode) {
         this.logicalNode = logicalNode;

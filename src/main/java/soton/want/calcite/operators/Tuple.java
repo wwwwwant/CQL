@@ -56,6 +56,17 @@ public class Tuple {
         this(tuple.getValues(),tuple.getRowType(),state,tuple.getTs());
     }
 
+    public Object get(int index){
+        if (index>values.length){
+            throw new IndexOutOfBoundsException();
+        }
+        return values[index];
+    }
+
+    public void set(int index, Object val){
+        values[index] = val;
+    }
+
     public int getFieldCount(){ return values.length;}
 
     public Object getField(int index){

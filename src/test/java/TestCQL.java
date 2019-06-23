@@ -1,13 +1,11 @@
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
-import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RelBuilder;
-import org.apache.calcite.util.TimeString;
 import org.apache.log4j.Logger;
+import soton.want.calcite.operators.Context;
 import soton.want.calcite.operators.RelToOperators;
 import soton.want.calcite.operators.Utils;
 import soton.want.calcite.operators.logic.LogicalDelta;
@@ -15,8 +13,6 @@ import soton.want.calcite.operators.logic.LogicalTupleWindow;
 import soton.want.calcite.operators.physic.Operator;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 
 import static soton.want.calcite.operators.Utils.getRelBuilder;
@@ -24,12 +20,14 @@ import static soton.want.calcite.operators.Utils.getRelBuilder;
 /**
  * @author want
  */
-public class testCQL {
+public class TestCQL {
     /**
      * RelBuilder is used to build logical plan with api and schema
      * no need to parse SQL
      */
+    private static final Logger LOGGER = Logger.getLogger(TestCQL.class);
     private static RelBuilder builder = getRelBuilder("sales.json");
+    private static Context context = Context.getInstance();
 
 
     public static void main(String[] args) {
@@ -43,14 +41,12 @@ public class testCQL {
 
         // test timeWin
 //        timeWinProject();
+
         // test timeWinJoin
-        timeWinJoin();
+//        timeWinJoin();
 
-//        RexNode timeInterval = Utils.createTimeInterval(builder, 1, 0, 0);
-//        System.out.println(timeInterval.toString());
-//        System.out.println(timeInterval.getType().getSqlTypeName().equals(SqlTypeName.TIME));
-//        System.out.println("mills: "+((RexLiteral) timeInterval).getValue2());
-
+        // agg
+        testAgg();
 
     }
 
@@ -122,20 +118,38 @@ public class testCQL {
     }
 
 
-    private static void buildAgg(){
-        builder.scan("Orders")
-                .aggregate(builder.groupKey("USERID"),
+    private static void testAgg(){
+        RelNode t1 = builder.scan("Orders").build();
+        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 30);
+        LogicalTupleWindow window1 = LogicalTupleWindow.create(t1, timeInterval);
+
+        builder.push(window1)
+                .aggregate(builder.groupKey("USERID","PRODUCT"),
                         builder.count(false, "C"),
-                        builder.max("MAX",builder.field("ID")),
-                        builder.sum(false, "S", builder.field("UNITS")))
-                .filter(
-                        builder.call(SqlStdOperatorTable.GREATER_THAN, builder.field("C"),
-                                builder.literal(10)))
-                .sort(builder.field("C"));
+                        builder.sum(false, "S", builder.field("UNITS")),
+                        builder.avg(false,"AVG",builder.field("UNITS")),
+                        builder.max("MAX",builder.field("UNITS")),
+                        builder.min("MIN",builder.field("UNITS"))
+                        );
+//                .filter(
+//                        builder.call(SqlStdOperatorTable.GREATER_THAN, builder.field("C"),
+//                                builder.literal(10)))
+//                .sort(builder.field("C"));
 
         RelNode node = builder.build();
 
-        RelOptUtil.toString(node);
+        LogicalDelta rStream = LogicalDelta.create(node,builder.literal("RET"));
+
+        System.out.println(RelOptUtil.toString(rStream));
+
+        RelToOperators visitor = new RelToOperators();
+        visitor.visit(rStream);
+
+        List<Operator> tables = visitor.getTables();
+
+        testOperator(tables);
+
+
     }
 
 
@@ -207,8 +221,9 @@ public class testCQL {
 
     public static void testOperator(List<Operator> tables){
         while (true){
-            System.out.println(new Date(System.currentTimeMillis()));
-            System.out.println();
+            long startTs = System.currentTimeMillis();
+            context.setCurrentTs(startTs);
+            LOGGER.info("windowEndTs: "+startTs);
             for (Operator table : tables){
                 table.run();
             }

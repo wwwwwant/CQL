@@ -16,6 +16,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * @author want
@@ -67,6 +68,7 @@ public class StreamTableFactory implements TableFactory<Table>{
             implements StreamableTable {
         public Enumerable<Object[]> scan(DataContext root) {
             return Linq4j.asEnumerable(() -> new Iterator<Object[]>() {
+                Random random = new Random();
                 private final String[] items = {"paint", "paper", "brush"};
                 private int counter = 0;
 
@@ -82,7 +84,7 @@ public class StreamTableFactory implements TableFactory<Table>{
                         e.printStackTrace();
                     }
                     return new Object[]{
-                            System.currentTimeMillis(), index, index%4+1, items[index % items.length], 10};
+                            System.currentTimeMillis(), index, 1, items[index % items.length], random.nextInt(10)+1};
                 }
 
                 public void remove() {
