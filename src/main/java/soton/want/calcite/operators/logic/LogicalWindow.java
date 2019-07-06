@@ -13,7 +13,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
  * LogicalWindow which transform a Stream to a Relation based on condition (fixed tuple size or time interval)
  * @author want
  */
-public class LogicalTupleWindow extends SingleRel {
+public class LogicalWindow extends SingleRel {
 
     private RexNode condition;
 
@@ -24,15 +24,15 @@ public class LogicalTupleWindow extends SingleRel {
      * @param traits
      * @param input   Input relational expression
      */
-    protected LogicalTupleWindow(RelOptCluster cluster, RelTraitSet traits, RelNode input, RexNode condition) {
+    protected LogicalWindow(RelOptCluster cluster, RelTraitSet traits, RelNode input, RexNode condition) {
         super(cluster, traits, input);
         this.condition = condition;
     }
 
-    public static LogicalTupleWindow create(RelNode input, RexNode windowSize){
+    public static LogicalWindow create(RelNode input, RexNode windowSize){
         RelOptCluster cluster = input.getCluster();
         RelTraitSet traits= input.getTraitSet();
-        return new LogicalTupleWindow(cluster,traits,input,windowSize);
+        return new LogicalWindow(cluster,traits,input,windowSize);
     }
 
     public RexNode getCondition() {
@@ -41,12 +41,18 @@ public class LogicalTupleWindow extends SingleRel {
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
+        Object val = ((RexLiteral) condition).getValue2();
         if (condition.getType().getSqlTypeName().equals(SqlTypeName.TIME)){
             return super.explainTerms(pw)
-                    .item("TupleTimeWindow",((RexLiteral) condition).getValue2());
+                    .item("TupleTimeWindow", val+" ms");
         }else {
-            return super.explainTerms(pw)
-                    .item("TupleSizeWindow",((RexLiteral) condition).getValue2());
+            long l =  (Long) val;
+            if (l>0){
+                return super.explainTerms(pw)
+                        .item("TupleSizeWindow",l);
+            }else{
+                return super.explainTerms(pw).item("unBoundedWindow","infinite");
+            }
         }
 
     }

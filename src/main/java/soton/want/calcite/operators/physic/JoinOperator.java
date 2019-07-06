@@ -27,7 +27,7 @@ public class JoinOperator extends BiOperator<Join> {
     private TupleQueue rightSynopsis;
 
     public JoinOperator(Join logicalNode, Operator left, Operator right) {
-        super(logicalNode, left, right);
+        super(logicalNode, (AbstractOperator) left, (AbstractOperator) right);
         leftSynopsis = new TupleQueue();
         rightSynopsis = new TupleQueue();
         this.relJoin = logicalNode;
@@ -37,7 +37,7 @@ public class JoinOperator extends BiOperator<Join> {
 
     @Override
     public void doRun() {
-        LOGGER.debug("run join......");
+        LOGGER.debug("run join......"+logicalNode);
         runSource(leftSource);
         runSource(rightSource);
     }
@@ -98,7 +98,7 @@ public class JoinOperator extends BiOperator<Join> {
                 res = new Tuple(val,relJoin.getRowType(),state,tuple.getTs());
                 Boolean isJoin = (Boolean) Eval.eval(condition,res);
                 if (isJoin != null && isJoin){
-                    this.sink.addLast(res);
+                    sendToSinks(res);
                 }
             }
         }else{
@@ -118,7 +118,7 @@ public class JoinOperator extends BiOperator<Join> {
                 res = new Tuple(val,relJoin.getRowType(),state,tuple.getTs());
                 Boolean isJoin = (Boolean) Eval.eval(condition,res);
                 if (isJoin != null && isJoin){
-                    this.sink.addLast(res);
+                    sendToSinks(res);
                 }
             }
         }

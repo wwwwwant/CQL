@@ -20,7 +20,7 @@ public class GroupByOperator extends UnaryOperator<Aggregate> {
     private static final Logger LOGGER = Logger.getLogger(GroupByOperator.class);
 
     public GroupByOperator(Aggregate logicalNode, Operator child) {
-        super(logicalNode, child);
+        super(logicalNode, (AbstractOperator) child);
         groupSet = logicalNode.getGroupSet();
         aggCallList = logicalNode.getAggCallList();
         init();
@@ -54,10 +54,10 @@ public class GroupByOperator extends UnaryOperator<Aggregate> {
 
     @Override
     protected void doRun() {
-        LOGGER.debug("run groupBy......");
+        LOGGER.debug("run groupBy......"+logicalNode);
         // del old tuple
         for (Tuple tuple : res.values()) {
-            this.sink.addLast(new Tuple(tuple, Tuple.State.DEL));
+            sendToSinks(new Tuple(tuple, Tuple.State.DEL));
         }
 
         Tuple tuple;
@@ -85,7 +85,7 @@ public class GroupByOperator extends UnaryOperator<Aggregate> {
         }
 
         for (Tuple t : res.values()) {
-            this.sink.addLast(new Tuple(t, Tuple.State.ADD));
+           sendToSinks(new Tuple(t, Tuple.State.ADD));
         }
     }
 

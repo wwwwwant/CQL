@@ -17,14 +17,14 @@ public class ProjectOperator extends UnaryOperator<Project> {
     List<RexNode> projectList;
 
     public ProjectOperator(Project project, Operator child) {
-        super(project, child);
+        super(project, (AbstractOperator) child);
         this.projectList = project.getProjects();
     }
 
     @Override
     public void doRun() {
 
-        LOGGER.debug("run project......");
+        LOGGER.debug("run project......"+logicalNode);
 
         Tuple tuple;
         Tuple res = null;
@@ -36,7 +36,7 @@ public class ProjectOperator extends UnaryOperator<Project> {
                 result[i] = Eval.eval(projectList.get(i),tuple);
             }
             res = new Tuple(result,getRowType(),tuple.getState(),tuple.getTs());
-            sink.addLast(res);
+            sendToSinks(res);
         }
 
     }

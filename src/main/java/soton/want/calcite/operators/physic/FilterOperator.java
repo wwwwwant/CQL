@@ -15,20 +15,25 @@ public class FilterOperator extends UnaryOperator<Filter> {
     private RexNode condition;
 
     public FilterOperator(Filter logicalNode, Operator child) {
-        super(logicalNode, child);
+        super(logicalNode, (AbstractOperator) child);
         this.condition = logicalNode.getCondition();
     }
 
     @Override
     public void doRun() {
-        LOGGER.debug("run filter......");
+        LOGGER.debug("run filter......"+logicalNode);
 
         Tuple tuple = null;
         while ((tuple=source.pollFirst())!=null){
             Boolean comp = (Boolean) Eval.eval(condition,tuple);
             if (comp!=null && comp){
-                this.sink.addLast(tuple);
+                sendToSinks(tuple);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "FilterOperator:"+condition;
     }
 }

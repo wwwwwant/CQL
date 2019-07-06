@@ -19,7 +19,7 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.tools.*;
 import soton.want.calcite.operators.logic.LogicalDelta;
-import soton.want.calcite.operators.logic.LogicalTupleWindow;
+import soton.want.calcite.operators.logic.LogicalWindow;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -79,13 +79,13 @@ public class SimpleQueryPlanner {
     }
 
     public static void testSQLPlan() throws Exception {
-        // Simple connection implementation for loading schema from sales.json
+        // Simple connection implementation for loading schema from schema.json
         CalciteConnection connection = new SimpleCalciteConnection();
-        String salesSchema = Resources.toString(SimpleQueryPlanner.class.getResource("/sales.json"), Charset.defaultCharset());
+        String salesSchema = Resources.toString(SimpleQueryPlanner.class.getResource("/schema.json"), Charset.defaultCharset());
         // ModelHandler reads the sales schema and load the schema to connection's root schema and sets the default schema
         new ModelHandler(connection, "inline:" + salesSchema);
 
-        // Create the query planner with sales schema. conneciton.getSchema returns default schema name specified in sales.json
+        // Create the query planner with sales schema. conneciton.getSchema returns default schema name specified in schema.json
         SimpleQueryPlanner queryPlanner = new SimpleQueryPlanner(connection.getRootSchema().getSubSchema(connection.getSchema()));
         RelNode logicalPlan = queryPlanner.getLogicalPlan("select product from orders");
         System.out.println(RelOptUtil.toString(logicalPlan));
@@ -110,12 +110,12 @@ public class SimpleQueryPlanner {
     public static void testBuilder() throws Exception{
 
 
-        RelBuilder builder = supplyRelBuilder("sales.json");
+        RelBuilder builder = supplyRelBuilder("schema.json");
 
         RexBuilder rexBuilder = builder.getRexBuilder();
 
         RelNode logicalScan = builder.scan("Orders").build();
-        LogicalTupleWindow logicalWindow = LogicalTupleWindow.create(logicalScan, builder.literal(1000));
+        LogicalWindow logicalWindow = LogicalWindow.create(logicalScan, builder.literal(1000));
 
         RelNode node = builder
                 .push(logicalWindow)

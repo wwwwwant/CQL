@@ -2,16 +2,17 @@ package soton.want.calcite.operators;
 
 
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Aggregate;
-import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.*;
 import soton.want.calcite.operators.logic.LogicalDelta;
-import soton.want.calcite.operators.logic.LogicalTupleWindow;
+import soton.want.calcite.operators.logic.LogicalRStream;
+import soton.want.calcite.operators.logic.LogicalWindow;
 import soton.want.calcite.operators.physic.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class visits Logical plan and generate physical operators
@@ -25,9 +26,9 @@ public class RelToOperators {
      */
     private List<Operator> tables = new ArrayList<>();
 
+    private Map<RelNode,Operator> instancesMap = new HashMap<>();
 
     public Operator visit(TableScan scan) {
-
         Operator op = new TableScanOperator(scan);
         tables.add(op);
         return op;
@@ -53,6 +54,11 @@ public class RelToOperators {
         return new DeltaOperator(rStream,childOp);
     }
 
+    public Operator visit(LogicalRStream rStream){
+        Operator childOp = visit(rStream.getInput());
+        return new RStreamOperator(rStream,childOp);
+    }
+
 
     public Operator visit(LogicalJoin join) {
         Operator left = visit(join.getInput(0));
@@ -75,26 +81,37 @@ public class RelToOperators {
         return null;
     }
 
-    public Operator visit(LogicalTupleWindow tupleWindow){
+    public Operator visit(LogicalWindow tupleWindow){
         Operator childOp = visit(tupleWindow.getInput());
         return new WindowOperator(tupleWindow,childOp);
     }
 
 
-    public Operator visit(RelNode other) {
-        if (other instanceof LogicalFilter){
-            return visit((LogicalFilter) other);
-        }else if (other instanceof LogicalProject){
-            return visit((LogicalProject) other);
-        }else if (other instanceof LogicalTupleWindow){
-            return visit((LogicalTupleWindow) other);
-        }else if (other instanceof TableScan){
-            return visit((TableScan) other);
-        }else if (other instanceof LogicalJoin){
-            return visit((LogicalJoin) other);
-        }else if (other instanceof LogicalAggregate){
-            return visit((LogicalAggregate) other);
+    public Operator visit(RelNode relNode) {
+        if (instancesMap.containsKey(relNode)) {
+            return instancesMap.get(relNode);
         }
-        return null;
+        Operator operator = null;
+        if (relNode instanceof LogicalFilter){
+            operator = visit((LogicalFilter) relNode);
+        }else if (relNode instanceof LogicalProject){
+            operator = visit((LogicalProject) relNode);
+        }else if (relNode instanceof LogicalWindow){
+            operator =  visit((LogicalWindow) relNode);
+        }else if (relNode instanceof TableScan){
+            operator =  visit((TableScan) relNode);
+        }else if (relNode instanceof LogicalJoin){
+            operator =  visit((LogicalJoin) relNode);
+        }else if (relNode instanceof LogicalAggregate){
+            operator =  visit((LogicalAggregate) relNode);
+        }else if (relNode instanceof LogicalRStream) {
+            operator = visit((LogicalRStream) relNode);
+        }else if (relNode instanceof LogicalDelta) {
+            operator = visit((LogicalDelta) relNode);
+        }
+
+        instancesMap.put(relNode,operator);
+
+        return operator;
     }
 }

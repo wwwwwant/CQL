@@ -20,31 +20,31 @@ public class DeltaOperator extends UnaryOperator<LogicalDelta> {
     private String type;
 
     public DeltaOperator(LogicalDelta logicalNode, Operator child) {
-        super(logicalNode, child);
+        super(logicalNode, (AbstractOperator) child);
         this.condition = logicalNode.getCondition();
         this.type = (String)Eval.eval(condition,null);
     }
 
     @Override
     protected void doRun() {
-        LOGGER.debug("run delta......");
+        LOGGER.debug("run delta......"+logicalNode);
 
         Tuple tuple = source.pollFirst();
-        if (tuple == null){
-            return;
-        }
-//        Utils.printTypes(tuple);
 
         while (tuple!=null){
-            if (type.equals(tuple.getState().toString()) || type.equals("RET")){
-                Utils.printTuple(tuple);
+            if (type.equals(tuple.getState().toString())){
+                if (this.parents.size() == 0){
+                    Utils.printTuple(tuple);
+                }else {
+                    sendToSinks(tuple);
+                }
             }
             tuple = source.pollFirst();
         }
     }
 
     @Override
-    public void run() {
-        doRun();
+    public String toString() {
+        return "DeltaOperator:"+type;
     }
 }

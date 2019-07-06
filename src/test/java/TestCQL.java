@@ -9,7 +9,8 @@ import soton.want.calcite.operators.Context;
 import soton.want.calcite.operators.RelToOperators;
 import soton.want.calcite.operators.Utils;
 import soton.want.calcite.operators.logic.LogicalDelta;
-import soton.want.calcite.operators.logic.LogicalTupleWindow;
+import soton.want.calcite.operators.logic.LogicalRStream;
+import soton.want.calcite.operators.logic.LogicalWindow;
 import soton.want.calcite.operators.physic.Operator;
 
 import java.util.ArrayList;
@@ -26,7 +27,7 @@ public class TestCQL {
      * no need to parse SQL
      */
     private static final Logger LOGGER = Logger.getLogger(TestCQL.class);
-    private static RelBuilder builder = getRelBuilder("sales.json");
+    private static RelBuilder builder = getRelBuilder("schema.json");
     private static Context context = Context.getInstance();
 
 
@@ -40,13 +41,13 @@ public class TestCQL {
 //        streamProjectFilter();
 
         // test timeWin
-//        timeWinProject();
+        timeWinProject();
 
         // test timeWinJoin
 //        timeWinJoin();
 
         // agg
-        testAgg();
+//        testAgg();
 
     }
 
@@ -59,7 +60,7 @@ public class TestCQL {
          */
         RelNode t1 = builder.scan("Orders").build();
         RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 30);
-        LogicalTupleWindow window1 = LogicalTupleWindow.create(t1, timeInterval);
+        LogicalWindow window1 = LogicalWindow.create(t1, timeInterval);
 
         RelNode t2 = builder.scan("User").build();
 
@@ -87,9 +88,6 @@ public class TestCQL {
 
         visitor.visit(rStream);
 
-        List<Operator> tables = visitor.getTables();
-
-        testOperator(tables);
     }
 
     private static void timeWinProject(){
@@ -98,30 +96,35 @@ public class TestCQL {
          * FROM Orders[Range 00:00:30]
          * WHERE ID>3;
          */
+        RelBuilder builder = getRelBuilder("schema.json");
         RelNode relScan = builder.scan("Orders").build();
         RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 30);
 
-        LogicalTupleWindow relWindow = LogicalTupleWindow.create(relScan, timeInterval);
+        LogicalWindow relWindow = LogicalWindow.create(relScan, timeInterval);
         RelNode relProject = builder
                 .push(relWindow)
-                .filter(builder.call(SqlStdOperatorTable.GREATER_THAN,builder.field("ID"),builder.literal(3)))
-                .project(builder.field("ID"),builder.field("PRODUCT")).build();
+                .filter(builder.call(SqlStdOperatorTable.GREATER_THAN
+                        ,builder.field("ID")
+                        ,builder.literal(3)))
+                .project(builder.field("ID")
+                        ,builder.field("PRODUCT")).build();
 
-        LogicalDelta rStream = LogicalDelta.create(relProject,builder.literal("RET"));
+        LogicalRStream rStream = LogicalRStream.create(relProject);
+
+        System.out.println(RelOptUtil.toString(rStream));
 
         RelToOperators visitor = new RelToOperators();
         visitor.visit(rStream);
 
         List<Operator> tables = visitor.getTables();
-
-        testOperator(tables);
+        context.runOperator(tables);
     }
 
 
     private static void testAgg(){
         RelNode t1 = builder.scan("Orders").build();
         RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 30);
-        LogicalTupleWindow window1 = LogicalTupleWindow.create(t1, timeInterval);
+        LogicalWindow window1 = LogicalWindow.create(t1, timeInterval);
 
         builder.push(window1)
                 .aggregate(builder.groupKey("USERID","PRODUCT"),
@@ -145,9 +148,6 @@ public class TestCQL {
         RelToOperators visitor = new RelToOperators();
         visitor.visit(rStream);
 
-        List<Operator> tables = visitor.getTables();
-
-        testOperator(tables);
 
 
     }
@@ -160,7 +160,7 @@ public class TestCQL {
          * ON o.USERID=U.USERID
          */
         RelNode t1 = builder.scan("Orders").build();
-        LogicalTupleWindow window1 = LogicalTupleWindow.create(t1, builder.literal(30));
+        LogicalWindow window1 = LogicalWindow.create(t1, builder.literal(30));
 
         RelNode t2 = builder.scan("User").build();
 
@@ -188,9 +188,6 @@ public class TestCQL {
 
         visitor.visit(rStream);
 
-        List<Operator> tables = visitor.getTables();
-
-        testOperator(tables);
     }
 
     public static void streamProjectFilter(){
@@ -201,7 +198,7 @@ public class TestCQL {
          * WHERE ID>3;
          */
         RelNode relScan = builder.scan("Orders").build();
-        LogicalTupleWindow relWindow = LogicalTupleWindow.create(relScan, builder.literal(50));
+        LogicalWindow relWindow = LogicalWindow.create(relScan, builder.literal(50));
         RelNode relProject = builder
                 .push(relWindow)
                 .filter(builder.call(SqlStdOperatorTable.GREATER_THAN,builder.field("ID"),builder.literal(3)))
@@ -212,9 +209,6 @@ public class TestCQL {
         RelToOperators visitor = new RelToOperators();
         visitor.visit(rStream);
 
-        List<Operator> tables = visitor.getTables();
-
-        testOperator(tables);
 
     }
 
@@ -223,7 +217,7 @@ public class TestCQL {
         while (true){
             long startTs = System.currentTimeMillis();
             context.setCurrentTs(startTs);
-            LOGGER.info("windowEndTs: "+startTs);
+            LOGGER.info("windowEndTs: "+Utils.formatDate(startTs));
             for (Operator table : tables){
                 table.run();
             }

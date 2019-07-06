@@ -7,6 +7,7 @@ import org.apache.calcite.schema.ScannableTable;
 import org.apache.calcite.schema.Table;
 import org.apache.log4j.Logger;
 import soton.want.calcite.operators.Tuple;
+import soton.want.calcite.operators.TupleQueue;
 
 import java.util.LinkedList;
 
@@ -27,13 +28,13 @@ public class TableScanOperator extends AbstractOperator<TableScan> {
 
     Enumerator<Object[]> enumerator = null;
 
-    LinkedList<Tuple> source;
+    TupleQueue source;
 
 
     public TableScanOperator(TableScan logicalNode) {
         super(logicalNode);
         table = logicalNode.getTable();
-        source = new LinkedList<>();
+        source = new TupleQueue();
 
         Thread producer = new Thread(new Producer(),"thread-producer");
         producer.setDaemon(true);
@@ -67,29 +68,24 @@ public class TableScanOperator extends AbstractOperator<TableScan> {
 
     @Override
     public Operator[] getChildren() {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
-    public void setTable(RelOptTable table) {
-        this.table = table;
+    @Override
+    public TupleQueue[] getSources() {
+        return null;
     }
 
 
     @Override
     public void doRun() {
-        LOGGER.debug("run tableScan......");
+        LOGGER.debug("run tableScan......"+logicalNode);
         synchronized (source){
             while (!source.isEmpty()){
-                this.sink.addLast(Tuple.copy(source.pollFirst()));
+                sendToSinks(Tuple.copy(source.pollFirst()));
             }
         }
 
     }
-
-
-    public LinkedList<Tuple> getTupleQueue(){
-        return source;
-    }
-
 
 }

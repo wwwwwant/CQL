@@ -7,17 +7,14 @@ import org.apache.log4j.Logger;
 import soton.want.calcite.operators.Tuple;
 import soton.want.calcite.operators.TupleQueue;
 import soton.want.calcite.operators.Utils;
-import soton.want.calcite.operators.logic.LogicalTupleWindow;
-
-import java.math.BigDecimal;
-import java.util.Date;
+import soton.want.calcite.operators.logic.LogicalWindow;
 
 /**
- * Physical Operator {@link LogicalTupleWindow}
+ * Physical Operator {@link LogicalWindow}
  * use synopsis to maintain state
  * @author want
  */
-public class WindowOperator extends UnaryOperator<LogicalTupleWindow> {
+public class WindowOperator extends UnaryOperator<LogicalWindow> {
 
     private static final Logger LOGGER = Logger.getLogger(WindowOperator.class);
 
@@ -25,17 +22,17 @@ public class WindowOperator extends UnaryOperator<LogicalTupleWindow> {
     private int timeInterval;
     private RexNode condition;
     private TupleQueue synopsis;
+    private SqlTypeName windowType;
 
-    public WindowOperator(LogicalTupleWindow logicalNode, Operator child) {
-        super(logicalNode, child);
+    public WindowOperator(LogicalWindow logicalNode, Operator child) {
+        super(logicalNode, (AbstractOperator) child);
         this.condition = logicalNode.getCondition();
+        this.windowType = condition.getType().getSqlTypeName();
 
-        if (condition.getType().getSqlTypeName().equals(SqlTypeName.TIME)){
+        if (windowType.equals(SqlTypeName.TIME)){
             this.timeInterval = (Integer) Eval.eval(condition);
-            this.windowSize = -1;
         }else{
-            this.windowSize = ((BigDecimal) Eval.eval(condition)).longValue();
-            this.timeInterval = -1;
+            this.windowSize =  (Long) Eval.eval(condition);
         }
 
         this.synopsis = new TupleQueue();
@@ -43,11 +40,20 @@ public class WindowOperator extends UnaryOperator<LogicalTupleWindow> {
 
     @Override
     public void doRun() {
-        LOGGER.debug("run windowOp......");
-        if (windowSize!=-1){
+        LOGGER.debug("run windowOp......"+logicalNode);
+        if (windowType.equals(SqlTypeName.TIME)){
+            runTimeWin();
+        }else if (windowSize>0){
             runSizeWin();
         }else {
-            runTimeWin();
+            runUnbounded();
+        }
+    }
+
+    private void runUnbounded(){
+        Tuple tuple = null;
+        while ((tuple = source.pollFirst())!=null){
+            sendToSinks(new Tuple(tuple, Tuple.State.ADD));
         }
     }
 
@@ -56,10 +62,10 @@ public class WindowOperator extends UnaryOperator<LogicalTupleWindow> {
         while ((tuple=source.pollFirst())!=null){
             if (synopsis.size()==windowSize){
                 Tuple delTuple = synopsis.pollFirst();
-                this.sink.addLast(new Tuple(delTuple, Tuple.State.DEL));
+                sendToSinks(new Tuple(delTuple, Tuple.State.DEL));
             }
             synopsis.addLast(tuple);
-            this.sink.addLast(new Tuple(tuple, Tuple.State.ADD));
+            sendToSinks(new Tuple(tuple, Tuple.State.ADD));
         }
     }
 
@@ -71,19 +77,18 @@ public class WindowOperator extends UnaryOperator<LogicalTupleWindow> {
 
         // delete tuple out of window
         while (!synopsis.isEmpty()){
-            tuple = synopsis.get(0);
+            tuple        = synopsis.get(0);
             if (tuple.getTs()<startTs){
                 Tuple delTuple = synopsis.pollFirst();
-                sink.addLast(new Tuple(delTuple,Tuple.State.DEL));
+                sendToSinks(new Tuple(delTuple,Tuple.State.DEL));
             }else break;
         }
 
         // add new tuple to sink
         while ((tuple = source.pollFirst())!=null){
-            LOGGER.debug("receive source tupleTs: "+ Utils.formatDate(tuple.getTs()));
-            if (tuple.getTs()>startTs){
+            if (tuple.getTs()>startTs || timeInterval == 0){
                 synopsis.addLast(tuple);
-                sink.addLast(new Tuple(tuple, Tuple.State.ADD));
+                sendToSinks(new Tuple(tuple, Tuple.State.ADD));
             }
         }
     }
