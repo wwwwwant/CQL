@@ -31,11 +31,12 @@ public class StreamTableFactory implements TableFactory<Table>{
 
     private abstract static class BaseOrderStreamTable implements ScannableTable {
         protected final RelProtoDataType protoRowType = a0 -> a0.builder()
-                .add("ROWTIME", SqlTypeName.TIMESTAMP)
+//                .add("ROWTIME", SqlTypeName.TIMESTAMP)
                 .add("ID", SqlTypeName.INTEGER)
                 .add("USERID",SqlTypeName.INTEGER)
-                .add("PRODUCT", SqlTypeName.VARCHAR, 10)
-                .add("UNITS", SqlTypeName.INTEGER)
+                .add("PRODUCTID",SqlTypeName.INTEGER)
+                .add("PRODUCTNAME", SqlTypeName.VARCHAR, 10)
+                .add("UNITS", SqlTypeName.DOUBLE)
                 .build();
 
         public RelDataType getRowType(RelDataTypeFactory typeFactory) {
@@ -84,7 +85,7 @@ public class StreamTableFactory implements TableFactory<Table>{
                         e.printStackTrace();
                     }
                     return new Object[]{
-                            System.currentTimeMillis(), index, 1, items[index % items.length], random.nextInt(10)+1};
+                            index, index%3+1, items[index % items.length], random.nextInt(10)+1.0};
                 }
 
                 public void remove() {

@@ -14,6 +14,7 @@ import soton.want.calcite.operators.logic.LogicalRStream;
 import soton.want.calcite.operators.logic.LogicalWindow;
 import soton.want.calcite.operators.physic.Operator;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static soton.want.calcite.operators.Utils.getRelBuilder;
@@ -32,7 +33,7 @@ public class TestLinearRoad {
          * SegSpeedStr(vehicleId, speed, segNo)
          *
          * SELECT vehicleId, speed,
-         * xPos/5280 as segNo
+         * xPos/100 as segNo
          * From PosSpeedStr
          */
         RelNode table = builder.scan("LinearRoad").build();
@@ -41,7 +42,7 @@ public class TestLinearRoad {
 
         builder.push(unboundedWin);
 
-        RexNode xPos = builder.call(SqlStdOperatorTable.DIVIDE, builder.field("xPos"), builder.literal(10));
+        RexNode xPos = builder.call(SqlStdOperatorTable.DIVIDE, builder.field("xPos"), builder.literal(100)) ;
         RexNode castSeg = builder.cast(xPos, SqlTypeName.BIGINT);
         RexNode segNo = builder.alias(castSeg,"segNo");
 
@@ -57,9 +58,11 @@ public class TestLinearRoad {
 
         /**
          * ActiveVehicleSegRel(vehicleId,segNo)
+         * 5 seconds for the heartbeat
          *
+         * 每一批有 del 也有 add
          */
-        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 30);
+        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 5);
         LogicalWindow activeTimeWin = LogicalWindow.create(segSpeedStr, timeInterval);
 
         RelNode activeVehicleSegRel = builder.push(activeTimeWin).project(
@@ -70,28 +73,43 @@ public class TestLinearRoad {
 
         /**
          * VehicleSegEntryStr(vehicleId,segNo)
+         * 永远是输出 add，每 5s 输出一次最新数据
          *
+         * VehicleSegEntryRel 加了一个 now window
+         * 每次先输出旧的 del，再输出新的 add
          */
         RexNode nowWin = Utils.createTimeInterval(builder, 0, 0, 0);
         LogicalDelta vehicleSegEntryStr = LogicalDelta.create(activeVehicleSegRel, builder.literal("ADD"));
+
+        // used in TollStr
         LogicalWindow vehicleSegEntryRel = LogicalWindow.create(vehicleSegEntryStr, nowWin);
 
 
         /**
          * CongestedSegRel(segNo)
+         * last 1 min avg speed to define the congested segment
+         *
+         * 由于 1 分钟时间长，在现在的设置下，所有 segment 都是 congested
+         * 现在里面会缓存同一辆车的很多次 report
+         * 每次接收新的 add，先输出 del 的 group 再聚合 add，最后输出聚合后的 add
          */
-        RexNode timeWin_5 = Utils.createTimeInterval(builder, 0, 5, 0);
+        RexNode timeWin_5 = Utils.createTimeInterval(builder, 0, 1, 0);
 
         RelNode congestedSegRel = builder.push(LogicalWindow.create(segSpeedStr, timeWin_5))
                 .aggregate(
                         builder.groupKey(builder.field("segNo"))
                         , builder.avg(false, "avgSpeed", builder.field("speed"))
                 )
-                .filter(builder.call(SqlStdOperatorTable.LESS_THAN, builder.field("avgSpeed"), builder.literal(40)))
+                .filter(builder.call(SqlStdOperatorTable.LESS_THAN, builder.field("avgSpeed"), builder.literal(30)))
                 .project(builder.field("segNo")).build();
 
         /**
          * SegVolRel(segNo,numVehicles)
+         *
+         * 输出的总是 add，每次先接收 del，清除上一批次 segNo 里的 state
+         * 再接收新的 segNo 里的数据
+         *
+         * 现在的写法是，groupBy 会先输出 del 清除状态，再输出 add 输出新状态
          */
 
         RelNode segVolRel = builder.push(activeVehicleSegRel)
@@ -118,7 +136,7 @@ public class TestLinearRoad {
 
         RexNode alias = builder.call(SqlStdOperatorTable.AS,multiply2,builder.literal("toll"));
 
-        RelNode toll = builder.project(builder.field("vehicleId"), alias).build();
+        RelNode toll = builder.project(builder.field("vehicleId"), alias,builder.field("segNo")).build();
 
         LogicalRStream tollStr = LogicalRStream.create(toll);
 
@@ -139,6 +157,8 @@ public class TestLinearRoad {
         CONTEXT.runOperator(tables);
 
     }
+
+
 
 
     public static void testOperator(List<Operator> tables){

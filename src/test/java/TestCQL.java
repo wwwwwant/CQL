@@ -13,6 +13,7 @@ import soton.want.calcite.operators.logic.LogicalRStream;
 import soton.want.calcite.operators.logic.LogicalWindow;
 import soton.want.calcite.operators.physic.Operator;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,134 +34,120 @@ public class TestCQL {
 
     public static void main(String[] args) {
 
+        /**
+         * stream schema: Orders(id, userId, product, units)
+         */
 
-        // test join on stream and relation
-//        streamRelationJoin();
 
-        // test project and filter on stream
-//        streamProjectFilter();
 
-        // test timeWin
-        timeWinProject();
+        /**
+         * test time-based window and I/D/RStream operators
+         *
+         * SELECT I/D/RStream *
+         * FROM Orders[Range 00:00:10]
+         */
+//        timeWindowToStream("ADD");
+//        timeWindowToStream("DEL");
+//        timeWindowToStream("RStream");
 
-        // test timeWinJoin
-//        timeWinJoin();
+        /**
+         * test project and filter operators
+         *
+         * SELECT RStream id, productName
+         * FROM Orders[Range 00:00:10]
+         * WHERE ID>10;
+         */
+//        timeWinProjectFilter();
 
-        // agg
-//        testAgg();
+        /**
+         * test groupBy operator (units are random int between 1 and 10)
+         *
+         * SELECT RStream userId, productName, SUM(units), COUNT(1), AVG(units), MAX(units), MIN(units)
+         * FROM Orders[Range 00:00:10]
+         * GROUP BY userId,product
+         */
+        timeWindowgroupBy();
+
+        /**
+         * test join and groupBy
+         * relation schema: User(userId, name)
+         *
+         * SELECT RStream userId, name, SUM(units), count(*) as count
+         * FROM Orders[00:00:10] as o join User as u
+         * ON o.userId=u.userId
+         * GROUP BY userId,name
+         */
+//        streamJoinGroupBy();
+
 
     }
 
+    private static void timeWindowToStream(String type) {
 
-    private static void timeWinJoin(){
-        /**
-         * SELECT STREAM ID, USERID, USERID0, NAME
-         * FROM Orders[Range 00:00:30] as o join User as u
-         * ON o.USERID=U.USERID
-         */
         RelNode t1 = builder.scan("Orders").build();
-        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 30);
-        LogicalWindow window1 = LogicalWindow.create(t1, timeInterval);
+        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 10);
+        LogicalWindow timeWindow = LogicalWindow.create(t1, timeInterval);
 
-        RelNode t2 = builder.scan("User").build();
-
-        builder.push(window1);
-        builder.push(t2);
-
-        builder.join(JoinRelType.INNER,"USERID");
-
-        List<RexNode> fields = new ArrayList<>();
-        int[] fieldId = new int[]{1,2,5,6};
-
-        for (int id: fieldId){
-            fields.add(builder.field(id));
+        RelNode head = null;
+        if (type.equals("ADD") || type.equals("DEL")){
+                head = LogicalDelta.create(timeWindow,builder.literal(type));
+        }else {
+            head = LogicalRStream.create(timeWindow);
         }
 
-        builder.project(fields);
-
-        RelNode project = builder.build();
-
-        LogicalDelta rStream = LogicalDelta.create(project,builder.literal("RET"));
-
-//        System.out.println(RelOptUtil.toString(rStream));
-
-        RelToOperators visitor = new RelToOperators();
-
-        visitor.visit(rStream);
+        context.transformAndRun(head);
 
     }
 
-    private static void timeWinProject(){
-        /**
-         * SELECT stream ID, PRODUCT
-         * FROM Orders[Range 00:00:30]
-         * WHERE ID>3;
-         */
-        RelBuilder builder = getRelBuilder("schema.json");
+    private static void timeWinProjectFilter(){
+
         RelNode relScan = builder.scan("Orders").build();
-        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 30);
+        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 10);
 
         LogicalWindow relWindow = LogicalWindow.create(relScan, timeInterval);
         RelNode relProject = builder
                 .push(relWindow)
-                .filter(builder.call(SqlStdOperatorTable.GREATER_THAN
-                        ,builder.field("ID")
-                        ,builder.literal(3)))
+                .filter(builder.call(SqlStdOperatorTable.GREATER_THAN,builder.field("ID"),builder.literal(10)))
                 .project(builder.field("ID")
-                        ,builder.field("PRODUCT")).build();
+                        ,builder.field("PRODUCTNAME")).build();
 
         LogicalRStream rStream = LogicalRStream.create(relProject);
 
-        System.out.println(RelOptUtil.toString(rStream));
+        context.transformAndRun(rStream);
 
-        RelToOperators visitor = new RelToOperators();
-        visitor.visit(rStream);
-
-        List<Operator> tables = visitor.getTables();
-        context.runOperator(tables);
     }
 
 
-    private static void testAgg(){
+    private static void timeWindowgroupBy(){
         RelNode t1 = builder.scan("Orders").build();
-        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 30);
+        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 10);
         LogicalWindow window1 = LogicalWindow.create(t1, timeInterval);
 
         builder.push(window1)
-                .aggregate(builder.groupKey("USERID","PRODUCT"),
-                        builder.count(false, "C"),
+                .aggregate(builder.groupKey("USERID","PRODUCTNAME"),
                         builder.sum(false, "S", builder.field("UNITS")),
+                        builder.count(false, "C"),
                         builder.avg(false,"AVG",builder.field("UNITS")),
                         builder.max("MAX",builder.field("UNITS")),
                         builder.min("MIN",builder.field("UNITS"))
-                        );
-//                .filter(
-//                        builder.call(SqlStdOperatorTable.GREATER_THAN, builder.field("C"),
-//                                builder.literal(10)))
-//                .sort(builder.field("C"));
+                );
 
         RelNode node = builder.build();
-
-        LogicalDelta rStream = LogicalDelta.create(node,builder.literal("RET"));
+        LogicalRStream rStream = LogicalRStream.create(node);
 
         System.out.println(RelOptUtil.toString(rStream));
 
-        RelToOperators visitor = new RelToOperators();
-        visitor.visit(rStream);
-
-
+        context.transformAndRun(rStream);
 
     }
 
 
-    public static void streamRelationJoin(){
-        /**
-         * SELECT STREAM ID, USERID, USERID0, NAME
-         * FROM Orders[ROW 30] as o join User as u
-         * ON o.USERID=U.USERID
-         */
+    public static void streamJoinGroupBy(){
+
         RelNode t1 = builder.scan("Orders").build();
-        LogicalWindow window1 = LogicalWindow.create(t1, builder.literal(30));
+
+        RexNode timeInterval = Utils.createTimeInterval(builder, 0, 0, 10);
+        LogicalWindow window1 = LogicalWindow.create(t1, timeInterval);
 
         RelNode t2 = builder.scan("User").build();
 
@@ -170,66 +157,25 @@ public class TestCQL {
         builder.join(JoinRelType.INNER,"USERID");
 
         List<RexNode> fields = new ArrayList<>();
-        int[] fieldId = new int[]{1,2,5,6};
+        int[] fieldId = new int[]{1,2,3,5};
 
         for (int id: fieldId){
             fields.add(builder.field(id));
         }
 
-        builder.project(fields);
+        builder.project(fields)
+                .aggregate(builder.groupKey("USERID","PRODUCTNAME","NAME"),
+                builder.sum(false, "S", builder.field("UNITS")),
+                builder.count(false, "C"));
 
-        RelNode project = builder.build();
-
-        LogicalDelta rStream = LogicalDelta.create(project,builder.literal("RET"));
+        RelNode build = builder.build();
+        LogicalRStream rStream = LogicalRStream.create(build);
 
         System.out.println(RelOptUtil.toString(rStream));
 
-        RelToOperators visitor = new RelToOperators();
-
-        visitor.visit(rStream);
-
+        context.transformAndRun(rStream);
     }
 
-    public static void streamProjectFilter(){
-
-        /**
-         * SELECT stream ID, PRODUCT
-         * FROM Orders[ROW 50]
-         * WHERE ID>3;
-         */
-        RelNode relScan = builder.scan("Orders").build();
-        LogicalWindow relWindow = LogicalWindow.create(relScan, builder.literal(50));
-        RelNode relProject = builder
-                .push(relWindow)
-                .filter(builder.call(SqlStdOperatorTable.GREATER_THAN,builder.field("ID"),builder.literal(3)))
-                .project(builder.field("ID"),builder.field("PRODUCT")).build();
-
-        LogicalDelta rStream = LogicalDelta.create(relProject,builder.literal("RET"));
-
-        RelToOperators visitor = new RelToOperators();
-        visitor.visit(rStream);
-
-
-    }
-
-
-    public static void testOperator(List<Operator> tables){
-        while (true){
-            long startTs = System.currentTimeMillis();
-            context.setCurrentTs(startTs);
-            LOGGER.info("windowEndTs: "+Utils.formatDate(startTs));
-            for (Operator table : tables){
-                table.run();
-            }
-            System.out.println("------------------------------------");
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-    }
 
 
 

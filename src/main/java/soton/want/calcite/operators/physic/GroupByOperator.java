@@ -31,6 +31,8 @@ public class GroupByOperator extends UnaryOperator<Aggregate> {
     private List<BaseAggFunction> aggFunctions = new ArrayList<>();
     private HashMap<GroupKey, Tuple> res = new HashMap<>();
 
+    private HashMap<GroupKey,Tuple> lastStates = new HashMap<>();
+
 
     private void init() {
 
@@ -56,13 +58,17 @@ public class GroupByOperator extends UnaryOperator<Aggregate> {
     protected void doRun() {
         LOGGER.debug("run groupBy......"+logicalNode);
         // del old tuple
-        for (Tuple tuple : res.values()) {
-            sendToSinks(new Tuple(tuple, Tuple.State.DEL));
+        for (GroupKey key : res.keySet()) {
+            lastStates.put(key,new Tuple(res.get(key), Tuple.State.DEL));
         }
+
+        Set<GroupKey> keys = new HashSet<>();
 
         Tuple tuple;
         while ((tuple = this.source.pollFirst()) != null) {
             GroupKey key = new GroupKey(tuple);
+
+            keys.add(key);
 
             Tuple aggTuple = res.get(key);
             if (aggTuple == null) {
@@ -84,9 +90,14 @@ public class GroupByOperator extends UnaryOperator<Aggregate> {
             }
         }
 
-        for (Tuple t : res.values()) {
-           sendToSinks(new Tuple(t, Tuple.State.ADD));
+        for (GroupKey key : keys) {
+            Tuple lastTuple = lastStates.get(key);
+            if (lastTuple!=null) {
+                sendToSinks(lastTuple);
+            }
+            sendToSinks(new Tuple(res.get(key), Tuple.State.ADD));
         }
+        lastStates.clear();
     }
 
 
@@ -190,6 +201,12 @@ public class GroupByOperator extends UnaryOperator<Aggregate> {
             Object s = this.sum.eval(key, tuple);
             String type = call.getType().getSqlTypeName().getName();
             BigDecimal result = null;
+
+            if (c.equals(0)) {
+                // receive del tuple so the count decrease to 0
+                result = new BigDecimal(0.0D);
+                return result;
+            }
             switch (type) {
                 case "INTEGER":
                     result = BigDecimal.valueOf(((Integer) s).doubleValue() / c).setScale(2, RoundingMode.CEILING);
@@ -198,7 +215,11 @@ public class GroupByOperator extends UnaryOperator<Aggregate> {
                     result = BigDecimal.valueOf(((Long) s).doubleValue() / c).setScale(2, RoundingMode.CEILING);
                     break;
                 case "DOUBLE":
-                    result = BigDecimal.valueOf((Double) s / c).setScale(2, RoundingMode.CEILING);
+                    try {
+                        result = BigDecimal.valueOf((Double) s / c).setScale(2, RoundingMode.CEILING);
+                    }catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     break;
                 default:
                     break;

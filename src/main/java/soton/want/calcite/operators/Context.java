@@ -1,5 +1,6 @@
 package soton.want.calcite.operators;
 
+import org.apache.calcite.rel.RelNode;
 import soton.want.calcite.operators.physic.JoinOperator;
 import soton.want.calcite.operators.physic.Operator;
 
@@ -81,6 +82,15 @@ public class Context {
             nextStage+=1;
         }
     }
+
+    public void transformAndRun(RelNode relPlan) {
+        RelToOperators visitor = new RelToOperators();
+        visitor.visit(relPlan);
+
+        List<Operator> tables = visitor.getTables();
+        this.runOperator(tables);
+    }
+
     public void runOperator(List<Operator> tables){
         splitStages(tables);
 

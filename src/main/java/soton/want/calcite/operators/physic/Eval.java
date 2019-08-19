@@ -115,7 +115,8 @@ public class Eval {
                             case BIGINT:
                             case INTEGER:
                                 BigDecimal eval = (BigDecimal) eval(operands.get(0),tuple);
-                                return eval.longValue();
+                                long res = eval.longValue();
+                                return res;
 
                             default:break;
                         }

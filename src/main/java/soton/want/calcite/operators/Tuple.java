@@ -37,7 +37,7 @@ public class Tuple {
 
 
     public static Tuple copy(Tuple tuple) {
-        return new Tuple(tuple.getValues(),tuple.getRowType(),tuple.getState(),tuple.getTs());
+        return new Tuple(tuple.getValues().clone(),tuple.getRowType(),tuple.getState(),tuple.getTs());
     }
 
 
@@ -53,7 +53,7 @@ public class Tuple {
 
 
     public Tuple(Tuple tuple, State state){
-        this(tuple.getValues(),tuple.getRowType(),state,tuple.getTs());
+        this(tuple.getValues().clone(),tuple.getRowType(),state,tuple.getTs());
     }
 
     public Object get(int index){

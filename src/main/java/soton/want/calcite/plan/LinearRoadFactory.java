@@ -23,7 +23,11 @@ public class LinearRoadFactory implements TableFactory<Table> {
 
     @Override
     public Table create(SchemaPlus schema, String name, Map<String, Object> operand, RelDataType rowType) {
-        return new InfinitePosStream();
+        CarFactory carFactory;
+//        carFactory = new SameSpeedCarFactory();
+        carFactory = new FastSlowCarFactory();
+
+        return new InfinitePosStream(carFactory);
     }
 
 
@@ -31,7 +35,7 @@ public class LinearRoadFactory implements TableFactory<Table> {
         protected final RelProtoDataType protoRowType = a0 -> a0.builder()
                 .add("vehicleId", SqlTypeName.INTEGER)
                 .add("speed", SqlTypeName.DOUBLE)
-                .add("xPos",SqlTypeName.DOUBLE)
+                .add("xPos", SqlTypeName.DOUBLE)
                 .build();
 
         @Override
@@ -50,12 +54,14 @@ public class LinearRoadFactory implements TableFactory<Table> {
             return Schema.TableType.TABLE;
         }
 
-        @Override public boolean isRolledUp(String column) {
+        @Override
+        public boolean isRolledUp(String column) {
             return false;
         }
 
-        @Override public boolean rolledUpColumnValidInsideAgg(String column,
-                                                              SqlCall call, SqlNode parent, CalciteConnectionConfig config) {
+        @Override
+        public boolean rolledUpColumnValidInsideAgg(String column,
+                                                    SqlCall call, SqlNode parent, CalciteConnectionConfig config) {
             return false;
         }
     }
@@ -65,19 +71,26 @@ public class LinearRoadFactory implements TableFactory<Table> {
      */
     public static class InfinitePosStream extends BaseStreamTable
             implements StreamableTable {
+        private CarFactory carFactory;
+
+        public InfinitePosStream(CarFactory carFactory) {
+            this.carFactory = carFactory;
+        }
 
         @Override
         public Enumerable<Object[]> scan(DataContext root) {
             return Linq4j.asEnumerable(() -> new Iterator<Object[]>() {
-                List<Object[]> carsReport = CarFactory.getCarsReport();
+                List<Object[]> carsReport = carFactory.getCarsReport();
                 Iterator<Object[]> iterator = carsReport.iterator();
+
                 @Override
                 public boolean hasNext() {
-                    if (iterator ==null || !iterator.hasNext()){
-                        carsReport = CarFactory.getCarsReport();
+                    if (iterator == null || !iterator.hasNext()) {
+                        carsReport = carFactory.getCarsReport();
                         iterator = carsReport.iterator();
                         try {
-                            Thread.sleep(30000);
+                            // 5s 发送一次位置报告
+                            Thread.sleep(5000);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -103,67 +116,9 @@ public class LinearRoadFactory implements TableFactory<Table> {
         }
 
 
-        /**
-         * road length: 1000
-         */
-        static class Car{
-            int vehicleId;
-            double speed;
-            double xPos;
-
-            public Car(int id,double speed, double pos){
-                this.vehicleId = id;
-                this.speed = speed;
-                this.xPos = pos;
-            }
-
-            public double getCurPos(){
-                return this.xPos;
-            }
-
-            public void setVehicleId(int vehicleId) {
-                this.vehicleId = vehicleId;
-            }
-
-            public void setxPos(double xPos) {
-                this.xPos = xPos;
-            }
-
-            public Object[] report() {
-                Object[] res = new Object[]{vehicleId,speed,xPos};
-                this.xPos += speed*30/3600;
-                return res;
-            }
-        }
 
 
-        static class CarFactory{
-            static Car[] cars;
-            static int id = 1;
-            static double speed = 30;
-            static double roadLength = 1000;
-            static List<Object[]> report = new ArrayList<>();
 
-            static {
-                cars = new Car[10];
-                for (int i=0;i<cars.length;i++){
-                    cars[i] = new Car(id++,speed,0);
-                    report.add(cars[i].report());
-                }
-            }
-
-            static List<Object[]> getCarsReport(){
-                for (int i=0;i<cars.length;i++){
-                    Car car = cars[i];
-                    if (car.getCurPos()>roadLength){
-                        car.setVehicleId(id++);
-                        car.setxPos(0);
-                    }
-                    report.set(i,car.report());
-                }
-                return report;
-            }
-        }
 
     }
 }

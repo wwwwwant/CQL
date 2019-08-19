@@ -70,14 +70,16 @@ public class WindowOperator extends UnaryOperator<LogicalWindow> {
     }
 
     private void runTimeWin(){
+
         Tuple tuple;
         long startTs = context.getCurrentTs()-timeInterval;
         LOGGER.info("windowStartTs: "+Utils.formatDate(startTs));
+        LOGGER.info("windowEndTs: "+Utils.formatDate(context.getCurrentTs()));
 
 
         // delete tuple out of window
         while (!synopsis.isEmpty()){
-            tuple        = synopsis.get(0);
+            tuple = synopsis.get(0);
             if (tuple.getTs()<startTs){
                 Tuple delTuple = synopsis.pollFirst();
                 sendToSinks(new Tuple(delTuple,Tuple.State.DEL));

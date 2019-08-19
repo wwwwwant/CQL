@@ -1,7 +1,7 @@
 # CQL
 continuous query based on Apache Calcite
 
-Test cases in test/java/TestCQL.java
+Test cases in test/java/TestCQL.java and test/java/TestLinearRoad
 
 The overview of the process:
 

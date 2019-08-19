@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "defaultSchema": "SCHEMAS",
+  "schemas": [
+    {
+      "name": "SCHEMAS",
+      "tables": [
+        {
+          "name": "Orders",
+          "type": "custom",
+          "factory": "soton.want.calcite.plan.StreamTableFactory",
+          "stream":{"stream":true}
+        },
+        {
+          "name": "User",
+          "type": "custom",
+          "factory": "soton.want.calcite.plan.UserTableFactory",
+          "stream":{"stream":false}
+        },
+        {
+          "name": "LinearRoad",
+          "type": "custom",
+          "factory": "soton.want.calcite.plan.LinearRoadFactory",
+          "stream":{"stream":true}
+        }
+      ]
+    }
+  ]
+}
