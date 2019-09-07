@@ -1,6 +1,7 @@
 package soton.want.calcite.operators;
 
 import org.apache.calcite.rel.RelNode;
+import org.apache.log4j.Logger;
 import soton.want.calcite.operators.physic.JoinOperator;
 import soton.want.calcite.operators.physic.Operator;
 
@@ -17,6 +18,7 @@ public class Context {
      * Window end timestamp
      */
     private long currentTs;
+    private long scheduleInterval = 5000;
 
     private int curStage;
     private int nextStage;
@@ -33,6 +35,8 @@ public class Context {
     public long getCurrentTs() {
         return currentTs;
     }
+
+    public long getScheduleInterval() {return scheduleInterval;}
 
     public void setCurrentTs(long currentTs) {
         this.currentTs = currentTs;
@@ -105,7 +109,7 @@ public class Context {
                 }
             }
             try {
-                Thread.sleep(5000);
+                Thread.sleep(scheduleInterval);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

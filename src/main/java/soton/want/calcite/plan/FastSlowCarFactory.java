@@ -20,8 +20,8 @@ public class FastSlowCarFactory implements CarFactory{
     private int numCars = 2;
     private Car[] cars = new Car[numCars];
 
-//    private double[] carSpeeds = new double[]{10,35};
-    private double[] carSpeeds = new double[]{10,60};
+    private double[] carSpeeds = new double[]{10,35};
+//    private double[] carSpeeds = new double[]{10,60};
 
     private int id = 1;
     private double roadLength = 1000;
@@ -51,3 +51,6 @@ public class FastSlowCarFactory implements CarFactory{
         return report;
     }
 }
+
+
+

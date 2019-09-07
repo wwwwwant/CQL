@@ -79,10 +79,11 @@ public class Utils {
         for (Object obj : row){
             sb.append(obj).append(",");
         }
-        sb.append(tuple.getState());
-        sb.append(",");
+        sb.deleteCharAt(sb.length()-1);
+//        sb.append(tuple.getState());
+//        sb.append(",");
 
-        sb.append(formatDate(tuple.getTs()));
+//        sb.append(formatDate(tuple.getTs()));
 
         System.out.println(sb.toString());
     }

@@ -73,8 +73,10 @@ public class WindowOperator extends UnaryOperator<LogicalWindow> {
 
         Tuple tuple;
         long startTs = context.getCurrentTs()-timeInterval;
-        LOGGER.info("windowStartTs: "+Utils.formatDate(startTs));
-        LOGGER.info("windowEndTs: "+Utils.formatDate(context.getCurrentTs()));
+        if (timeInterval==context.getScheduleInterval()) {
+            LOGGER.info("windowStartTs: "+Utils.formatDate(startTs));
+            LOGGER.info("windowEndTs: "+Utils.formatDate(context.getCurrentTs()));
+        }
 
 
         // delete tuple out of window

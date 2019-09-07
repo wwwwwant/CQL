@@ -17,14 +17,14 @@ public class SameSpeedCarFactory implements CarFactory {
     /**
      * all cars in every segment would be charged
      */
-    int numCars = 2;
-    double speed = 10;
+//    int numCars = 2;
+//    double speed = 10;
 
     /**
      * no car would be charged
      */
-//    int numCars = 2;
-//    double speed = 35;
+    int numCars = 2;
+    double speed = 35;
 
 
     List<Object[]> report = new ArrayList<>();

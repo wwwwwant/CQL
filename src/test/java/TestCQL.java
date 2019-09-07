@@ -66,18 +66,18 @@ public class TestCQL {
          * FROM Orders[Range 00:00:10]
          * GROUP BY userId,product
          */
-        timeWindowgroupBy();
+//        timeWindowgroupBy();
 
         /**
          * test join and groupBy
          * relation schema: User(userId, name)
          *
-         * SELECT RStream userId, name, SUM(units), count(*) as count
+         * SELECT RStream userId, name, SUM(units) as sum, count(*) as count
          * FROM Orders[00:00:10] as o join User as u
          * ON o.userId=u.userId
          * GROUP BY userId,name
          */
-//        streamJoinGroupBy();
+        streamJoinGroupBy();
 
 
     }
@@ -157,16 +157,16 @@ public class TestCQL {
         builder.join(JoinRelType.INNER,"USERID");
 
         List<RexNode> fields = new ArrayList<>();
-        int[] fieldId = new int[]{1,2,3,5};
+        String[] fieldNames = new String[]{"USERID","PRODUCTNAME","NAME","USERID","UNITS"};
 
-        for (int id: fieldId){
+        for (String id: fieldNames){
             fields.add(builder.field(id));
         }
 
         builder.project(fields)
                 .aggregate(builder.groupKey("USERID","PRODUCTNAME","NAME"),
-                builder.sum(false, "S", builder.field("UNITS")),
-                builder.count(false, "C"));
+                builder.sum(false, "SUM", builder.field("UNITS")),
+                builder.count(false, "COUNT"));
 
         RelNode build = builder.build();
         LogicalRStream rStream = LogicalRStream.create(build);

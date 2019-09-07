@@ -34,7 +34,13 @@ public class RStreamOperator extends UnaryOperator<LogicalRStream> {
             }
         }
         Iterator<Tuple> iterator = synopsis.iterator();
-
+        if (this.parents.size()==0 && synopsis.size()>0) {
+            tuple = iterator.next();
+            if (tuple!=null){
+                System.out.println(tuple.getRowType().toString());
+            }
+            Utils.printTuple(tuple);
+        }
         while (iterator.hasNext()){
             tuple = iterator.next();
             //TODO more elegant way to print result

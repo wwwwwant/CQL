@@ -71,6 +71,7 @@ public class StreamTableFactory implements TableFactory<Table>{
             return Linq4j.asEnumerable(() -> new Iterator<Object[]>() {
                 Random random = new Random();
                 private final String[] items = {"paint", "paper", "brush"};
+                private final double[] prices = {10,20,30};
                 private int counter = 0;
 
                 public boolean hasNext() {
@@ -85,7 +86,7 @@ public class StreamTableFactory implements TableFactory<Table>{
                         e.printStackTrace();
                     }
                     return new Object[]{
-                            index, index%3+1, items[index % items.length], random.nextInt(10)+1.0};
+                            index, index%2+1,index%items.length, items[index % items.length], prices[index % items.length]};
                 }
 
                 public void remove() {

@@ -1,0 +1,46 @@
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowStartTs: 2019-09-04 23:05:23
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowEndTs: 2019-09-04 23:05:28
+RecordType(INTEGER vehicleId, BIGINT toll, BIGINT segNo)
+1,4802,1
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowStartTs: 2019-09-04 23:05:28
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowEndTs: 2019-09-04 23:05:33
+RecordType(INTEGER vehicleId, BIGINT toll, BIGINT segNo)
+1,4802,2
+
+
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowStartTs: 2019-09-04 23:05:38
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowEndTs: 2019-09-04 23:05:43
+RecordType(INTEGER vehicleId, BIGINT toll, BIGINT segNo)
+1,4802,3
+3,4802,0
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowStartTs: 2019-09-04 23:05:43
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowEndTs: 2019-09-04 23:05:48
+RecordType(INTEGER vehicleId, BIGINT toll, BIGINT segNo)
+1,4802,3
+3,4802,1
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowStartTs: 2019-09-04 23:05:48
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowEndTs: 2019-09-04 23:05:53
+RecordType(INTEGER vehicleId, BIGINT toll, BIGINT segNo)
+1,4802,4
+3,4802,3
+
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowStartTs: 2019-09-04 23:06:23
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowEndTs: 2019-09-04 23:06:28
+RecordType(INTEGER vehicleId, BIGINT toll, BIGINT segNo)
+1,4802,7
+4,4802,5
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowStartTs: 2019-09-04 23:06:28
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowEndTs: 2019-09-04 23:06:33
+RecordType(INTEGER vehicleId, BIGINT toll, BIGINT segNo)
+1,4802,8
+4,4802,7
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowStartTs: 2019-09-04 23:06:33
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowEndTs: 2019-09-04 23:06:38
+RecordType(INTEGER vehicleId, BIGINT toll, BIGINT segNo)
+1,4608,8
+4,4608,8
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowStartTs: 2019-09-04 23:06:38
+INFO main soton.want.calcite.operators.physic.WindowOperator - windowEndTs: 2019-09-04 23:06:43
+RecordType(INTEGER vehicleId, BIGINT toll, BIGINT segNo)
+1,4802,9
+

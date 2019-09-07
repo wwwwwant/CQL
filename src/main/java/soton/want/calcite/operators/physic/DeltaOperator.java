@@ -30,6 +30,9 @@ public class DeltaOperator extends UnaryOperator<LogicalDelta> {
         LOGGER.debug("run delta......"+logicalNode);
 
         Tuple tuple = source.pollFirst();
+        if (tuple!=null && this.parents.size()==0){
+            System.out.println(tuple.getRowType().toString());
+        }
 
         while (tuple!=null){
             if (type.equals(tuple.getState().toString())){
